@@ -1,11 +1,12 @@
 # Byte-compiled / optimized / DLL files
-/app/__pycache__/
-/app/bin/
-/app/certifi/
-/app/certifi-2024.2.2.dist-info/
-/app/charset_normalizer/
-/app/charset_normalizer-3.3.2.dist-info/
-/app/idna/
-/app/idna-3.6.dist-info/
-/app/requests/
-/app/requests-2.31.0.dist-info/
+# /app/__pycache__/
+# /app/bin/
+# /app/certifi/
+# /app/certifi-2024.2.2.dist-info/
+# /app/charset_normalizer/
+# /app/charset_normalizer-3.3.2.dist-info/
+# /app/idna/
+# /app/idna-3.6.dist-info/
+# /app/requests/
+# /app/requests-2.31.0.dist-info/
+app/
