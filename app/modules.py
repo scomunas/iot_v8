@@ -50,6 +50,28 @@ def get_sunrise(lat, long):
 
     print(response.text)
 
+# Store config file
+def put_file(data):
+    bucket = os.environ['S3_BUCKET']
+    s3 = boto3.resource('s3')
+    s3object = s3.Object(bucket, 'config.json')
+    response = s3object.put(
+        Body=(bytes(json.dumps(data).encode('UTF-8')))
+    )
+    status_code = response['ResponseMetadata']['HTTPStatusCode']
+
+    # Return status value
+    return status_code, response['ResponseMetadata']
+
+# Retrieve config file
+def get_file():
+    bucket = os.environ['S3_BUCKET']
+    s3 = boto3.resource('s3')
+    s3object = s3.Object(bucket, 'config.json')
+    file_content = s3object.get()['Body'].read().decode('utf-8')
+    json_content = json.loads(file_content)
+    return json_content
+
 # # Get body event and parse it
 # # using interpret for each
 # # manufacturer

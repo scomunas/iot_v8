@@ -17,6 +17,7 @@ def calendar_event(event, context):
     print(body)
 
     if (body['event_type'] == 'get_sunrise'):
+        print("Sunrise type -------------------------------------------")
         print(get_sunrise(41.61899359318845, 2.289165292862088))
     elif (body['event_type'] == 'move_blinds'):
         print(1)

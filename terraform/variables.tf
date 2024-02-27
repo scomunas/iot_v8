@@ -17,6 +17,18 @@ variable "lambdas" {
                   "handler": "calendar_event.calendar_event",
                   "apiMethod": "POST",
                   "apiRoute": "POST /v8/calendarEvent"
+                  },
+               "configStore" = {
+                  "name": "iot-v8-config-store",
+                  "handler": "config.config_store",
+                  "apiMethod": "POST",
+                  "apiRoute": "POST /v8/configStore"
+                  },
+               "configRetrieve" = {
+                  "name": "iot-v8-config-retrieve",
+                  "handler": "config.config_retrieve",
+                  "apiMethod": "POST",
+                  "apiRoute": "POST /v8/configRetrieve"
                   }
    }
 }
