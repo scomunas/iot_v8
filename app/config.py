@@ -1,13 +1,13 @@
 ######################################
-## Store config file
+## Store and Get config file
 ## 
-## Store JSON with all configuration
-## in S3 bucket
+## Store and Get JSON with all 
+## configuration in S3 bucket
 ######################################
 
 import json
 import os
-from modules import put_file, get_file
+from modules import put_config_file, get_config_file
 
 def config_store(event, context):
     ## Get Event parameters
@@ -17,7 +17,7 @@ def config_store(event, context):
     print(body)
 
     # Store config file
-    status_code, response = put_file(body)
+    status_code, response = put_config_file(body)
     
     return {
             "statusCode": status_code,
@@ -35,7 +35,7 @@ def config_retrieve(event, context):
     print(body)
 
     # Store config file
-    data = get_file()
+    data = get_config_file()
     print(data)
     
     return {

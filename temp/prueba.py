@@ -3,6 +3,7 @@ import json
 from datetime import datetime, timedelta
 import boto3
 import os
+from botocore.parsers import ResponseParser
 
 # # Insert event in Dynamo DB
 # def insert_event_db(event_parameters, ttl_days):
@@ -64,4 +65,17 @@ def get_sunrise(lat, long):
 
     print(response)
 
-get_sunrise(41.61899359318845, 2.289165292862088)
+# get_sunrise(41.61899359318845, 2.289165292862088)
+
+def ifttt_app(key, app_name, body):
+    url = "https://maker.ifttt.com/trigger/APPLET_NAME/json/with/key/".replace("APPLET_NAME", app_name) + key
+    print(url)
+    headers = {}
+
+    response = requests.request('POST', url,
+                headers=headers,
+                data=json.dumps(body))
+
+    return response.status_code
+
+print(ifttt_app('gcs4wieOf6v8rnA-CD8QbK3XP39vs_FIfnjvM-2Y6LA', 'iot_v7_blinds_off', {}))
