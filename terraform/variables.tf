@@ -8,15 +8,15 @@ variable "lambdas" {
    default = {
                "inputEvent" = {
                   "name": "iot-v8-sensor-event",
-                  "handler": "sensor_event.sensor_event",
+                  "handler": "sensor.sensor_event",
                   "apiMethod": "POST",
                   "apiRoute": "POST /v8/sensorEvent"
                   },
                "calendarEvent" = {
-                  "name": "iot-v8-calendar-event",
-                  "handler": "calendar_event.calendar_event",
+                  "name": "iot-v8-schedule-event",
+                  "handler": "eventbridge.schedule_event",
                   "apiMethod": "POST",
-                  "apiRoute": "POST /v8/calendarEvent"
+                  "apiRoute": "POST /v8/scheduleEvent"
                   },
                "configStore" = {
                   "name": "iot-v8-config-store",
@@ -39,6 +39,21 @@ variable "retention"{
    type = number
    default = 5
 }
+
+variable "lambda_timeout"{
+   # Lambda timeout in seconds
+   type = number
+   default = 20
+}
+
+variable "events_lambda_arn"{
+   # Lambda arn for receiving
+   # eventbridge events
+   # Need to be defined after creation
+   type = string
+   default = "PENDIENTE"
+}
+
 
 # variable "lambda_action_event"{
 #     type = string

@@ -75,14 +75,18 @@ def get_config_file():
 # Use a IFTTT app
 def ifttt_app(key, app_name, body):
     url = "https://maker.ifttt.com/trigger/APPLET_NAME/json/with/key/".replace("APPLET_NAME", app_name) + key
-    print(url)
-    headers = {}
+    # print(url)
+    headers = {
+        'Content-Type': 'application/json'
+    }
 
     response = requests.request('POST', url,
                 headers=headers,
                 data=json.dumps(body))
 
     return response.status_code
+
+
 
 # # Get body event and parse it
 # # using interpret for each

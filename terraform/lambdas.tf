@@ -26,6 +26,11 @@ resource "aws_iam_role_policy_attachment" "iot_v8_lambda_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
+resource "aws_iam_role_policy_attachment" "iot_v8_lambda_execution" {
+  role       = aws_iam_role.iot_v8_lambda_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AWSLambdaInvocation-DynamoDB"
+}
+
 resource "aws_iam_role_policy_attachment" "iot_dynamo_policy" {
   role       = aws_iam_role.iot_v8_lambda_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"
@@ -78,12 +83,15 @@ resource "aws_lambda_function" "iot_v8_lambda_main" {
 
   role = aws_iam_role.iot_v8_lambda_role.arn
 
+  timeout = var.lambda_timeout
+
   environment {
     variables = {
       RETENTION_DAYS = var.retention,
       AWS_DYNAMO_EVENTS_TABLE = aws_dynamodb_table.iot_v8_events.name,
-      IFTTT_URL = "https://maker.ifttt.com/trigger/app_name_change/json/with/key/gcs4wieOf6v8rnA-CD8QbK3XP39vs_FIfnjvM-2Y6LA",
-      S3_BUCKET = aws_s3_bucket.iot_v8_bucket.bucket
+      S3_BUCKET = aws_s3_bucket.iot_v8_bucket.bucket,
+      LAMBDA_EXECUTION_ROLE = aws_iam_role.iot_v8_lambda_role.arn,
+      LAMBDA_ARN = var.events_lambda_arn
     }
   }
 
