@@ -86,6 +86,31 @@ def ifttt_app(key, app_name, body):
 
     return response.status_code
 
+# Create action in eventbridge
+def action_create(name, event, target_lambda, schedule):
+    scheduler = boto3.client('scheduler')
+
+    flex_window = { "Mode": "OFF" }
+
+    eventbridge_target = {
+        "RoleArn": os.environ['EVENTBRIDGE_ROLE'],
+        "Arn": target_lambda,
+        "Input": json.dumps(event),
+        'RetryPolicy': {
+                'MaximumEventAgeInSeconds': 3600,
+                'MaximumRetryAttempts': 0
+            },
+    }
+
+    scheduler.create_schedule(
+        Name = name,
+        ActionAfterCompletion='DELETE',
+        ScheduleExpression = 'at(' + schedule + ')',
+        ScheduleExpressionTimezone = 'CET',
+        State='ENABLED',
+        GroupName=os.environ['EVENTBRIDGE_GROUP'],
+        Target=eventbridge_target,
+        FlexibleTimeWindow=flex_window)
 
 
 # # Get body event and parse it

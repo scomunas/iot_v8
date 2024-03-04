@@ -112,8 +112,8 @@ event = {
 }
 
 sqs_templated = {
-    "RoleArn": "arn:aws:iam::428652792036:role/service-role/Eventbridge_Test",
-    "Arn": "arn:aws:lambda:eu-central-1:428652792036:function:iot-v8-calendar-event",
+    "RoleArn": "arn:aws:iam::428652792036:role/iot-v8-eventbridge-role",
+    "Arn": "arn:aws:lambda:eu-central-1:428652792036:function:iot-v8-config-retrieve",
     "Input": json.dumps(event),
     'RetryPolicy': {
             'MaximumEventAgeInSeconds': 3600,
@@ -125,6 +125,8 @@ scheduler.create_schedule(
     Name="sqs-python-templated",
     ActionAfterCompletion='DELETE',
     ScheduleExpression = 'at(2024-03-14T00:00:00)',
+    ScheduleExpressionTimezone = 'CET',
     State='ENABLED',
+    GroupName='iot-v8-actions',
     Target=sqs_templated,
     FlexibleTimeWindow=flex_window)

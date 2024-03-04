@@ -1,52 +1,4 @@
 ######################################
-## Role and profile creation
-######################################
-
-resource "aws_iam_role" "iot_v8_lambda_role" {
-  name = "iot-v8-lambda-role"
-
-  assume_role_policy = <<POLICY
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "Service": "lambda.amazonaws.com"
-      },
-      "Action": "sts:AssumeRole"
-    }
-  ]
-}
-POLICY
-}
-
-resource "aws_iam_role_policy_attachment" "iot_v8_lambda_policy" {
-  role       = aws_iam_role.iot_v8_lambda_role.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-}
-
-resource "aws_iam_role_policy_attachment" "iot_v8_lambda_execution" {
-  role       = aws_iam_role.iot_v8_lambda_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AWSLambdaInvocation-DynamoDB"
-}
-
-resource "aws_iam_role_policy_attachment" "iot_dynamo_policy" {
-  role       = aws_iam_role.iot_v8_lambda_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"
-}
-
-resource "aws_iam_role_policy_attachment" "iot_s3_policy" {
-  role       = aws_iam_role.iot_v8_lambda_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
-}
-
-# resource "aws_iam_role_policy_attachment" "iot_sqs_policy" {
-#   role       = aws_iam_role.iot_v8_lambda_role.name
-#   policy_arn = "arn:aws:iam::aws:policy/AmazonSQSFullAccess"
-# }
-
-######################################
 ## File creation
 ######################################
 data "archive_file" "iot_v8_lambda_file" {
@@ -90,8 +42,9 @@ resource "aws_lambda_function" "iot_v8_lambda_main" {
       RETENTION_DAYS = var.retention,
       AWS_DYNAMO_EVENTS_TABLE = aws_dynamodb_table.iot_v8_events.name,
       S3_BUCKET = aws_s3_bucket.iot_v8_bucket.bucket,
-      LAMBDA_EXECUTION_ROLE = aws_iam_role.iot_v8_lambda_role.arn,
-      LAMBDA_ARN = var.events_lambda_arn
+      EVENTBRIDGE_ROLE = aws_iam_role.iot_v8_eventbridge_role.arn,
+      EVENTBRIDGE_GROUP = var.eventbridge_group,
+      EVENTBRIDGE_LAMBDA = each.value.lambda_arn
     }
   }
 
