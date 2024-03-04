@@ -16,7 +16,7 @@ def schedule_event(event, context):
     print("Calendar Event -------------------------------------------")
     print(event)
     body = json.loads(event["body"])
-    # print(body)
+    print(body)
 
     ## Irrigation Event for Create Event received-----------------------------------------------------
     if (body['title'] == 'irrigation_create'):
