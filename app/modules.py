@@ -48,7 +48,25 @@ def get_sunrise(lat, long):
 
     response = requests.request("GET", url, headers=headers, data=payload)
 
-    print(response.text)
+    if response.status_code >= 200 and response.status_code < 300:
+        response_json = json.loads(response.text)
+        sunrise = datetime.strptime(response_json['results']['sunrise'], "%I:%M:%S %p")
+        sunset = datetime.strptime(response_json['results']['sunset'], "%I:%M:%S %p")
+        data = {
+            "status": 200,
+            "results": {
+                "sunrise": sunrise,
+                "sunset": sunset    
+            }
+        }
+    else:
+        data = {
+            "status": 400,
+            "results": {
+            }
+        }
+    
+    return data
 
 # Store config file
 def put_config_file(data):

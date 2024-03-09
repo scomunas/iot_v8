@@ -58,16 +58,33 @@ def get_sunrise(lat, long):
     headers = {}
 
     print(url)
-    response = urllib3.request('GET', url,
-                headers=headers,
-                body=payload)
+    response = requests.request("GET", url, headers=headers, data=payload)
     
 
     # response = requests.request("GET", url, headers=headers, data=payload)
 
-    print(response)
+    if response.status_code >= 200 and response.status_code < 300:
+        response_json = json.loads(response.text)
+        sunrise = datetime.strptime(response_json['results']['sunrise'], "%I:%M:%S %p")
+        sunset = datetime.strptime(response_json['results']['sunset'], "%I:%M:%S %p")
+        data = {
+            "status": 200,
+            "results": {
+                "sunrise": sunrise,
+                "sunset": sunset    
+            }
+        }
+    else:
+        data = {
+            "status": 400,
+            "results": {
+            }
+        }
+    
+    return data
 
-# get_sunrise(41.61899359318845, 2.289165292862088)
+
+sunrise_data = get_sunrise(41.61899359318845, 2.289165292862088)
 
 def ifttt_app(key, app_name, body):
     url = "https://maker.ifttt.com/trigger/APPLET_NAME/json/with/key/".replace("APPLET_NAME", app_name) + key
@@ -81,7 +98,17 @@ def ifttt_app(key, app_name, body):
                 headers=headers,
                 data=json.dumps(body))
 
-    return response.status_code
+    if response.status_code >= 200 and response.status_code < 300:
+        response_json = json.loads(response.text)
+        sunrise = datetime.strptime(response_json['results']['sunrise'], "%H:%M %p")
+        data = {
+            "sunrise": sunrise
+        }
+    else:
+        data = {}
+
+
+    return data
 
 # print(ifttt_app('gcs4wieOf6v8rnA-CD8QbK3XP39vs_FIfnjvM-2Y6LA', 'iot_v7_blinds_off', {}))
 # print(ifttt_app('gcs4wieOf6v8rnA-CD8QbK3XP39vs_FIfnjvM-2Y6LA', 'iot_v8_calendar_create', {
@@ -102,31 +129,39 @@ def ifttt_app(key, app_name, body):
 # time = datetime.strptime(time_string, '%H:%M')
 # print(time+timedelta(minutes=2))
 
-scheduler = session.client('scheduler')
+# scheduler = session.client('scheduler')
 
-flex_window = { "Mode": "OFF" }
+# flex_window = { "Mode": "OFF" }
 
-event = {
-    "type": "hola",
-    "example": "bye"
-}
+# event = {
+#     "type": "hola",
+#     "example": "bye"
+# }
 
-sqs_templated = {
-    "RoleArn": "arn:aws:iam::428652792036:role/iot-v8-eventbridge-role",
-    "Arn": "arn:aws:lambda:eu-central-1:428652792036:function:iot-v8-config-retrieve",
-    "Input": json.dumps(event),
-    'RetryPolicy': {
-            'MaximumEventAgeInSeconds': 3600,
-            'MaximumRetryAttempts': 0
-        },
-}
+# sqs_templated = {
+#     "RoleArn": "arn:aws:iam::428652792036:role/iot-v8-eventbridge-role",
+#     "Arn": "arn:aws:lambda:eu-central-1:428652792036:function:iot-v8-config-retrieve",
+#     "Input": json.dumps(event),
+#     'RetryPolicy': {
+#             'MaximumEventAgeInSeconds': 3600,
+#             'MaximumRetryAttempts': 0
+#         },
+# }
 
-scheduler.create_schedule(
-    Name="sqs-python-templated",
-    ActionAfterCompletion='DELETE',
-    ScheduleExpression = 'at(2024-03-14T00:00:00)',
-    ScheduleExpressionTimezone = 'CET',
-    State='ENABLED',
-    GroupName='iot-v8-actions',
-    Target=sqs_templated,
-    FlexibleTimeWindow=flex_window)
+# scheduler.create_schedule(
+#     Name="sqs-python-templated",
+#     ActionAfterCompletion='DELETE',
+#     ScheduleExpression = 'at(2024-03-14T00:00:00)',
+#     ScheduleExpressionTimezone = 'CET',
+#     State='ENABLED',
+#     GroupName='iot-v8-actions',
+#     Target=sqs_templated,
+#     FlexibleTimeWindow=flex_window)
+
+prueba = "05:00-19:00"
+up = datetime.strptime(prueba.split('-')[0], "%H:%M")
+
+if up > sunrise_data['results']['sunrise']:
+    print("MAYOR")
+else:
+    print("MeNOR")
