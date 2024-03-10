@@ -8,10 +8,13 @@ module "eventbridge" {
 
   schedule_groups = {
     eventbridge_events = {
-      name = "iot-v8-events"
+      name = var.eventbridge_events_group
     }
     eventbridge_actions = {
-      name = var.eventbridge_group
+      name = var.eventbridge_actions_group
+    }
+    eventbridge_alarms = {
+      name = var.eventbridge_alarms_group
     }
   }
 }

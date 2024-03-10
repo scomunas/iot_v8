@@ -43,8 +43,10 @@ resource "aws_lambda_function" "iot_v8_lambda_main" {
       AWS_DYNAMO_EVENTS_TABLE = aws_dynamodb_table.iot_v8_events.name,
       S3_BUCKET = aws_s3_bucket.iot_v8_bucket.bucket,
       EVENTBRIDGE_ROLE = aws_iam_role.iot_v8_eventbridge_role.arn,
-      EVENTBRIDGE_GROUP = var.eventbridge_group,
-      EVENTBRIDGE_LAMBDA = each.value.lambda_arn
+      EVENTBRIDGE_ACTIONS_GROUP = var.eventbridge_actions_group,
+      EVENTBRIDGE_ACTIONS_LAMBDA = each.value.action_lambda_arn,
+      EVENTBRIDGE_ALARMS_GROUP = var.eventbridge_alarms_group,
+      EVENTBRIDGE_ALARMS_LAMBDA = each.value.alarms_lambda_arn
     }
   }
 

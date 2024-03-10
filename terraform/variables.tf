@@ -4,7 +4,8 @@ variable "lambdas" {
     handler = string
     apiMethod = string
     apiRoute = string
-    lambda_arn = string
+    action_lambda_arn = string
+    alarms_lambda_arn = string
    }))
    default = {
                "configStore" = {
@@ -12,42 +13,64 @@ variable "lambdas" {
                   "handler": "config.config_store",
                   "apiMethod": "POST",
                   "apiRoute": "POST /v8/configStore",
-                  "lambda_arn": ""
+                  "action_lambda_arn": "",
+                  "alarms_lambda_arn": ""
                   },
                "configRetrieve" = {
                   "name": "iot-v8-config-retrieve",
                   "handler": "config.config_retrieve",
                   "apiMethod": "POST",
                   "apiRoute": "POST /v8/configRetrieve",
-                  "lambda_arn": ""
+                  "action_lambda_arn": "",
+                  "alarms_lambda_arn": ""
                   },
                "irrigationEvent" = {
                   "name": "iot-v8-irrigation-event",
                   "handler": "events.irrigation_event",
                   "apiMethod": "POST",
                   "apiRoute": "POST /v8/irrigationEvent",
-                  "lambda_arn": "arn:aws:lambda:eu-central-1:428652792036:function:iot-v8-irrigation-action"
+                  "action_lambda_arn": "arn:aws:lambda:eu-central-1:428652792036:function:iot-v8-irrigation-action",
+                  "alarms_lambda_arn": ""
                   },
                "irrigationAction" = {
                   "name": "iot-v8-irrigation-action",
                   "handler": "actions.irrigation_action",
                   "apiMethod": "POST",
                   "apiRoute": "POST /v8/irrigationAction",
-                  "lambda_arn": ""
+                  "action_lambda_arn": "",
+                  "alarms_lambda_arn": ""
                   }
                "blindsEvent" = {
                   "name": "iot-v8-blinds-event",
                   "handler": "events.blinds_event",
                   "apiMethod": "POST",
                   "apiRoute": "POST /v8/blindsEvent",
-                  "lambda_arn": "arn:aws:lambda:eu-central-1:428652792036:function:iot-v8-blinds-action"
+                  "action_lambda_arn": "arn:aws:lambda:eu-central-1:428652792036:function:iot-v8-blinds-action",
+                  "alarms_lambda_arn": ""
                   },
                "blindsAction" = {
                   "name": "iot-v8-blinds-action",
                   "handler": "actions.blinds_action",
                   "apiMethod": "POST",
                   "apiRoute": "POST /v8/blindsAction",
-                  "lambda_arn": ""
+                  "action_lambda_arn": "",
+                  "alarms_lambda_arn": ""
+                  },
+               "alarmEvent" = {
+                  "name": "iot-v8-alarm-event",
+                  "handler": "events.alarm_event",
+                  "apiMethod": "POST",
+                  "apiRoute": "POST /v8/alarmEvent",
+                  "action_lambda_arn": "",
+                  "alarms_lambda_arn": "arn:aws:lambda:eu-central-1:428652792036:function:iot-v8-alarms-action"
+                  },
+               "alarmsAction" = {
+                  "name": "iot-v8-alarms-action",
+                  "handler": "alarms.alarms_action",
+                  "apiMethod": "POST",
+                  "apiRoute": "POST /v8/alarmsAction",
+                  "action_lambda_arn": "",
+                  "alarms_lambda_arn": ""
                   }
    }
 }
@@ -91,10 +114,23 @@ variable "irrigation_cron"{
    default = "cron(00 23 * * ? *)"
 }
 
-variable "eventbridge_group"{
+variable "eventbridge_events_group"{
+   # Eventbridge schedule group
+   # for create events
+   type = string
+   default = "iot-v8-events"
+}
+
+variable "eventbridge_actions_group"{
    # Eventbridge schedule group
    # for put actions
    type = string
    default = "iot-v8-actions"
 }
 
+variable "eventbridge_alarms_group"{
+   # Eventbridge schedule group
+   # for create alarm triggers
+   type = string
+   default = "iot-v8-alarms"
+}
