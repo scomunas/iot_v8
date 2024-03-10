@@ -3,7 +3,8 @@ import json
 from datetime import datetime, timedelta
 import boto3
 import os
-from botocore.parsers import ResponseParser
+from botocore.parsers import EventStreamJSONParser, ResponseParser
+from requests.models import DEFAULT_REDIRECT_LIMIT
 
 session = boto3.session.Session(profile_name='personal', region_name='eu-central-1')
 
@@ -158,10 +159,79 @@ def ifttt_app(key, app_name, body):
 #     Target=sqs_templated,
 #     FlexibleTimeWindow=flex_window)
 
-prueba = "05:00-19:00"
-up = datetime.strptime(prueba.split('-')[0], "%H:%M")
+# prueba = "05:00-19:00"
+# up = datetime.strptime(prueba.split('-')[0], "%H:%M")
 
-if up > sunrise_data['results']['sunrise']:
-    print("MAYOR")
-else:
-    print("MeNOR")
+# if up > sunrise_data['results']['sunrise']:
+#     print("MAYOR")
+# else:
+#     print("MeNOR")
+
+# # Get holiday list from https://date.nager.at/api
+# def get_holidays(country, county):
+#     year = datetime.now().year
+#     url = "https://date.nager.at/api/v3/publicholidays/" + \
+#         str(year) + \
+#         "/" + \
+#         str(country)
+
+#     payload={}
+#     headers = {}
+
+#     response = requests.request("GET", url, headers=headers, data=payload)
+
+#     if response.status_code >= 200 and response.status_code < 300:
+#         response_json = json.loads(response.text)
+#         holiday_list = []
+#         for holiday in response_json:
+#             if (holiday['global'] == True or
+#                 county in holiday['counties']):
+#                 holiday_list.append(holiday['date'])
+#         data = {
+#             "status": 200,
+#             "results": holiday_list  
+#         }
+#     else:
+#         data = {
+#             "status": 400,
+#             "results": {
+#             }
+#         }
+    
+#     return data
+
+# print(get_holidays("ES", "ES-CT"))
+# client = session.client('scheduler')
+
+# response = client.list_schedules(
+#     GroupName='iot-v8-events',
+#     NamePrefix='iot-v8-irrigation',
+#     MaxResults=50
+# )
+# print(len(response['Schedules']))
+
+
+def check_db(table_name, type, date, id, state):
+    dynamodb = session.client('dynamodb')
+
+    response = dynamodb.query(
+        TableName=table_name,
+        KeyConditionExpression='event_type = :event_type AND event_date >= :event_date',
+        ExpressionAttributeValues={
+            ':event_type': {'S': type},
+            ':event_date': {'S': date}
+        }
+    )
+    
+    event_number = 0
+    
+    for item in response['Items']:
+        event_id = item['event_id']['S']
+        event_state = item['event_state']['S']
+        if ((event_id == id or id == 'any') and
+            (event_state == state or state == 'any')):
+            event_number += 1
+
+    return event_number
+
+print(check_db('iot-v8-events', 'door', '20240310_123556', 'entrada', 'open'))

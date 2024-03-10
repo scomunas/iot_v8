@@ -3,7 +3,8 @@
 ## 
 ######################################
 
-from modules import get_config_file, action_create, insert_db, ifttt_app, get_sunrise
+from modules import get_config_file, event_create, insert_db, \
+                    ifttt_app, get_sunrise, get_holidays, event_check
 import json
 import os
 from datetime import datetime, timedelta
@@ -52,11 +53,12 @@ def irrigation_event(event, context):
                 "type": "irrigation",
                 "action": "start"
             }
-            action_create(
+            event_create(
                 name = 'irrigation_start_' + irrigation_name,
                 event = event,
-                target_lambda = os.environ['EVENTBRIDGE_LAMBDA'],
-                schedule = irrigation_date
+                target_lambda = os.environ['EVENTBRIDGE_ACTIONS_LAMBDA'],
+                schedule = irrigation_date,
+                event_group = os.environ['EVENTBRIDGE_ACTIONS_GROUP']
             )
 
             # Create event for stop irrigation
@@ -67,11 +69,12 @@ def irrigation_event(event, context):
                 "type": "irrigation",
                 "action": "stop"
             }
-            action_create(
+            event_create(
                 name = 'irrigation_stop_' + irrigation_name,
                 event = event,
-                target_lambda = os.environ['EVENTBRIDGE_LAMBDA'],
-                schedule = irrigation_date
+                target_lambda = os.environ['EVENTBRIDGE_ACTIONS_LAMBDA'],
+                schedule = irrigation_date,
+                event_group = os.environ['EVENTBRIDGE_ACTIONS_GROUP']
             )
 
             # Irrigation is OK and has been active
@@ -85,10 +88,10 @@ def irrigation_event(event, context):
         # created
         if (config_params['log_enabled'] == True):
             event = {
-                "type": 'irrigation',
-                "id": 'terraza',
-                "state": 'event_creation',
-                "data": '-'
+                "event_type": 'irrigation',
+                "event_id": 'terraza',
+                "event_state": 'event_creation',
+                "event_data": '-'
             }
             ttl_days = int(os.environ['RETENTION_DAYS'])
             events_table = os.environ['AWS_DYNAMO_EVENTS_TABLE']
@@ -136,10 +139,16 @@ def blinds_event(event, context):
     print('Get config data and calculate today variables')
     config = get_config_file()
     blinds = config['blinds']
+    holidays = config['holidays']
     config_params = config['config']
+
+    # Calculate dates and holiday
     today_datetime = datetime.now()
     today_weekday = days_of_week[today_datetime.weekday()]
     today_date = today_datetime.strftime("%Y-%m-%d")
+    holiday_list = get_holidays("ES", "ES-CT")['results']
+    for holiday in holidays:
+        holiday_list.append(holiday['date'])
 
     # Each row in blinds list
     print('For each row in blind list')
@@ -148,7 +157,8 @@ def blinds_event(event, context):
         if row['sunrise'] == True:
             # Only if sunrise is enabled
             # Get config times
-            if today_weekday not in days_of_weekend:
+            if (today_weekday not in days_of_weekend and
+                today_date not in holiday_list):
                 # Normal day
                 blind_up = datetime.strptime(row['time_normal'].split('-')[0], '%H:%M')
                 blind_down = datetime.strptime(row['time_normal'].split('-')[1], '%H:%M')
@@ -179,11 +189,12 @@ def blinds_event(event, context):
                 "blind": row['blind'],
                 "action": "up"
             }
-            action_create(
+            event_create(
                 name = 'blind_up_' + blind_up_name,
                 event = event,
-                target_lambda = os.environ['EVENTBRIDGE_LAMBDA'],
-                schedule = blind_up_date
+                target_lambda = os.environ['EVENTBRIDGE_ACTIONS_LAMBDA'],
+                schedule = blind_up_date,
+                event_group = os.environ['EVENTBRIDGE_ACTIONS_GROUP']
             )
 
             # Create event for blind down
@@ -194,11 +205,12 @@ def blinds_event(event, context):
                 "blind": row['blind'],
                 "action": "down"
             }
-            action_create(
+            event_create(
                 name = 'blind_down_' + blind_down_name,
                 event = event,
-                target_lambda = os.environ['EVENTBRIDGE_LAMBDA'],
-                schedule = blind_down_date
+                target_lambda = os.environ['EVENTBRIDGE_ACTIONS_LAMBDA'],
+                schedule = blind_down_date,
+                event_group = os.environ['EVENTBRIDGE_ACTIONS_GROUP']
             )
 
             row_boolean = True      
@@ -208,10 +220,10 @@ def blinds_event(event, context):
         # created
         if (config_params['log_enabled'] == True):
             event = {
-                "type": 'blinds',
-                "id": 'all',
-                "state": 'event_creation',
-                "data": '-'
+                "event_type": 'blinds',
+                "event_id": 'all',
+                "event_state": 'event_creation',
+                "event_data": '-'
             }
             ttl_days = int(os.environ['RETENTION_DAYS'])
             events_table = os.environ['AWS_DYNAMO_EVENTS_TABLE']
@@ -247,3 +259,92 @@ def blinds_event(event, context):
         "body": response_description
     }
 
+def alarm_event(event, context):
+    ## Get Event parameters
+    print("Sensor Event received-------------------------------------------")
+    # print(event)
+    body = json.loads(event["body"])
+    # print(body)
+
+    ## Create row for insert
+    if ('type' in body.keys() and
+        'id' in body.keys() and
+        'state' in body.keys() and
+        'data' in body.keys()):
+        event_parameters = {
+        "event_type": body['type'],
+        "event_id": body['id'],
+        "event_state": body['state'],
+        "event_data": body['data']
+        }
+    else:
+        print('La petición no contiene los parámetros necesarios')
+        return {
+            "statusCode": 400,
+            "headers": {
+                "Content-Type": "application/json"
+            },
+            "body": "La petición no contiene los parámetros necesarios"
+        }
+
+    print("Create alarm events -------------------------------------------")
+    # Get config data and store new config ASAP if needed
+    print('Get config data and check if trigger fired')
+    config = get_config_file()
+    alarms = config['alarms']
+    for trigger in alarms:
+        print('Checking alarm: ' + json.dumps(trigger)) 
+        if ((trigger['type'] == body['type'] or
+            trigger['type'] == 'any') and
+            (trigger['id'] == body['id'] or
+            trigger['id'] == 'any') and
+            (trigger['state'] == body['state'] or
+            trigger['state'] == 'any')):
+            # Alarm triggered, check for events
+            event_generated = event_check(
+                group = os.environ['EVENTBRIDGE_ALARMS_GROUP'],
+                rule = 'alarm_fired_' + str(trigger['rule'])
+            )
+            # If there's no event, create it
+            print("Event fired: " + str(event_generated))
+            if (event_generated == False):
+                event = {
+                    "rule": trigger
+                }
+                alarm_date = datetime.now() + timedelta(minutes=int(trigger['minutes']))
+                event_create(
+                    name = 'alarm_fired_' + str(trigger['rule']),
+                    event = event,
+                    target_lambda = os.environ['EVENTBRIDGE_ALARMS_LAMBDA'],
+                    schedule = alarm_date.strftime('%Y-%m-%dT%H:%M:%S'),
+                    event_group = os.environ['EVENTBRIDGE_ALARMS_GROUP']
+                )
+
+    ## Insert in DynamoDB
+    ttl_days = int(os.environ['RETENTION_DAYS'])
+    events_table = os.environ['AWS_DYNAMO_EVENTS_TABLE']
+    status_code, response = insert_db(
+        table_name = events_table, 
+        event_parameters = event_parameters, 
+        ttl_days = ttl_days
+    )
+
+    # Error if status code 4xx o 5xx
+    if status_code >= 400 and status_code < 600:
+        print("Error inserting row: " + json.dumps(event_parameters))
+        return {
+            "statusCode": 400,
+            "headers": {
+                "Content-Type": "application/json"
+            },
+            "body": "Error inserting row: " + json.dumps(event_parameters)
+        }
+
+
+    return {
+        "statusCode": 200,
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "body": "Sensor event processed"
+    }
