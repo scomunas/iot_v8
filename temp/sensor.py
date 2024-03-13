@@ -22,10 +22,10 @@ def sensor_event(event, context):
         'state' in body.keys() and
         'data' in body.keys()):
         event_parameters = {
-        "type": body['type'],
-        "id": body['id'],
-        "state": body['state'],
-        "data": body['data']
+        "event_type": body['type'],
+        "event_id": body['id'],
+        "event_state": body['state'],
+        "event_data": body['data']
         }
     else:
         print('La petición no contiene los parámetros necesarios')

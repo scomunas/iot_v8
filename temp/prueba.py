@@ -1,6 +1,6 @@
 # Libraries needed
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import boto3
 import os
 from botocore.parsers import EventStreamJSONParser, ResponseParser
@@ -211,27 +211,33 @@ def ifttt_app(key, app_name, body):
 # print(len(response['Schedules']))
 
 
-def check_db(table_name, type, date, id, state):
-    dynamodb = session.client('dynamodb')
+# def check_db(table_name, type, date, id, state):
+#     dynamodb = session.client('dynamodb')
 
-    response = dynamodb.query(
-        TableName=table_name,
-        KeyConditionExpression='event_type = :event_type AND event_date >= :event_date',
-        ExpressionAttributeValues={
-            ':event_type': {'S': type},
-            ':event_date': {'S': date}
-        }
-    )
+#     response = dynamodb.query(
+#         TableName=table_name,
+#         KeyConditionExpression='event_type = :event_type AND event_date >= :event_date',
+#         ExpressionAttributeValues={
+#             ':event_type': {'S': type},
+#             ':event_date': {'S': date}
+#         }
+#     )
     
-    event_number = 0
+#     event_number = 0
     
-    for item in response['Items']:
-        event_id = item['event_id']['S']
-        event_state = item['event_state']['S']
-        if ((event_id == id or id == 'any') and
-            (event_state == state or state == 'any')):
-            event_number += 1
+#     for item in response['Items']:
+#         event_id = item['event_id']['S']
+#         event_state = item['event_state']['S']
+#         if ((event_id == id or id == 'any') and
+#             (event_state == state or state == 'any')):
+#             event_number += 1
 
-    return event_number
+#     return event_number
 
-print(check_db('iot-v8-events', 'door', '20240310_123556', 'entrada', 'open'))
+# print(check_db('iot-v8-events', 'door', '20240310_123556', 'entrada', 'open'))
+import pytz
+
+CET = pytz.timezone("Europe/Madrid")
+print(datetime.now().astimezone(CET).strftime('%Y-%m-%dT%H:%M:%S'))
+datetime.sleep(1000)
+print('hola')

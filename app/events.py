@@ -8,6 +8,7 @@ from modules import get_config_file, event_create, insert_db, \
 import json
 import os
 from datetime import datetime, timedelta
+import pytz
 
 # from modules import get_sunrise
 days_of_week = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY','SUNDAY']
@@ -26,15 +27,16 @@ def irrigation_event(event, context):
     config = get_config_file()
     irrigation = config['irrigation']
     config_params = config['config']
-    tomorrow_datetime = datetime.now() + timedelta(days = 1)
-    tomorrow_weekday = days_of_week[tomorrow_datetime.weekday()]
-    tomorrow_date = tomorrow_datetime.strftime("%Y-%m-%d")
+    CET = pytz.timezone("Europe/Madrid")
+    today_datetime = datetime.now().astimezone(CET)
+    today_weekday = days_of_week[today_datetime.weekday()]
+    today_date = today_datetime.strftime("%Y-%m-%d")
 
     # Each row in irrigation list
     print('For each row in irrigation list')
     irrigation_boolean = False
     for row in irrigation:
-        if (row['weekday'] == tomorrow_weekday and
+        if (row['weekday'] == today_weekday and
             row['enable'] == True):
             # Row in today weekday
             print ('Row in today weekday: ' + str(row))
@@ -47,7 +49,7 @@ def irrigation_event(event, context):
 
             # Create event for start irrigation
             print('Create event for start irrigation')
-            irrigation_date = tomorrow_date + 'T' + irrigation_start + ':00'
+            irrigation_date = today_date + 'T' + irrigation_start + ':00'
             irrigation_name = irrigation_date.replace('-', '').replace(':', '').replace('T', '_')
             event = {
                 "type": "irrigation",
@@ -63,7 +65,7 @@ def irrigation_event(event, context):
 
             # Create event for stop irrigation
             print('Create event for stop irrigation')
-            irrigation_date = tomorrow_date + 'T' + irrigation_stop + ':00'
+            irrigation_date = today_date + 'T' + irrigation_stop + ':00'
             irrigation_name = irrigation_date.replace('-', '').replace(':', '').replace('T', '_')
             event = {
                 "type": "irrigation",
@@ -143,7 +145,8 @@ def blinds_event(event, context):
     config_params = config['config']
 
     # Calculate dates and holiday
-    today_datetime = datetime.now()
+    CET = pytz.timezone("Europe/Madrid")
+    today_datetime = datetime.now().astimezone(CET)
     today_weekday = days_of_week[today_datetime.weekday()]
     today_date = today_datetime.strftime("%Y-%m-%d")
     holiday_list = get_holidays("ES", "ES-CT")['results']
@@ -311,7 +314,9 @@ def alarm_event(event, context):
                 event = {
                     "rule": trigger
                 }
-                alarm_date = datetime.now() + timedelta(minutes=int(trigger['minutes']))
+                CET = pytz.timezone("Europe/Madrid")
+                alarm_date = datetime.now().astimezone(CET) + \
+                            timedelta(minutes=int(trigger['minutes']))
                 event_create(
                     name = 'alarm_fired_' + str(trigger['rule']),
                     event = event,

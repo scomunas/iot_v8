@@ -66,7 +66,7 @@ variable "lambdas" {
                   },
                "alarmsAction" = {
                   "name": "iot-v8-alarms-action",
-                  "handler": "alarms.alarms_action",
+                  "handler": "actions.alarms_action",
                   "apiMethod": "POST",
                   "apiRoute": "POST /v8/alarmsAction",
                   "action_lambda_arn": "",
@@ -98,7 +98,7 @@ variable "irrigation_lambda_arn"{
 variable "blinds_cron"{
    # Cron for generate irrigation actions
    type = string
-   default = "cron(00 02 * * ? *)"
+   default = "cron(05 00 * * ? *)"
 }
 
 variable "blinds_lambda_arn"{
@@ -111,7 +111,7 @@ variable "blinds_lambda_arn"{
 variable "irrigation_cron"{
    # Cron for generate irrigation actions
    type = string
-   default = "cron(00 23 * * ? *)"
+   default = "cron(05 00 * * ? *)"
 }
 
 variable "eventbridge_events_group"{

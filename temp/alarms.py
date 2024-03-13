@@ -59,7 +59,7 @@ def alarms_action(event, context):
                     event_parameters = event_parameters, 
                     ttl_days = ttl_days
                 )
-            if (event['rule']['fire_telegram'] == True):
+            if (event['rule']['fire_telegram'] == 'TRUE'):
                 body = {
                     "message": '<i>-- IoT v8 Action --</i>' + \
                   '\n<b>Type</b>: alarm!!!!!!!' + \

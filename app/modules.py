@@ -11,12 +11,14 @@ from datetime import datetime, timedelta
 import boto3
 import os
 import requests
+import pytz
 
 ## Insert event row on DB
 def insert_db(table_name, event_parameters, ttl_days):
     # Calculate dates assuming
     # event date is just now
-    date = datetime.now()
+    CET = pytz.timezone("Europe/Madrid")
+    date = datetime.now().astimezone(CET)
     date_delta = date + timedelta(days = ttl_days)
     date_string = date.strftime("%Y%m%d_%H%M%S")
     date_ttl = int(date_delta.timestamp())
@@ -186,7 +188,6 @@ def event_create(name, event, target_lambda, schedule, event_group):
         GroupName=event_group,
         Target=eventbridge_target,
         FlexibleTimeWindow=flex_window)
-
 
 # Check schdedule for concrete events
 def event_check(group, rule):

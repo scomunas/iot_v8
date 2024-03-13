@@ -9,6 +9,8 @@
 /app/idna-3.6.dist-info/
 /app/requests/
 /app/requests-2.31.0.dist-info/
+/app/pytz/*
+/app/pytz-2024.1.dist-info/*
 
 # Terraform
 # Local .terraform directories
