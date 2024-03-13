@@ -11,7 +11,7 @@
 /app/requests-2.31.0.dist-info/
 /app/pytz/*
 /app/pytz-2024.1.dist-info/*
-/temp/*
+/tmp/*
 
 # Terraform
 # Local .terraform directories
