@@ -7,7 +7,6 @@ from modules import get_config_file, ifttt_app, insert_db, check_db
 import json
 import os
 from datetime import datetime, timedelta
-import time
 
 # from modules import get_sunrise
 days_of_week = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY','SUNDAY']
@@ -99,12 +98,6 @@ def blinds_action(event, context):
                 "blind": event['blind'],
                 "action": event['action']
             }
-            # ifttt_app(
-            #     key = config_params['ifttt_key'],
-            #     app_name = config_params['blinds_off_app'],
-            #     body = body
-            # )
-            # time.sleep(1)
             ifttt_app(
                 key = config_params['ifttt_key'],
                 app_name = config_params['blinds_app'],

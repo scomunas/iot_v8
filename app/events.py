@@ -153,6 +153,13 @@ def blinds_event(event, context):
     for holiday in holidays:
         holiday_list.append(holiday['date'])
 
+    # Get sunrise from sunrisesunset.io
+    print('Get sunrise from sunrisesunset.io')
+    sunrise_data = get_sunrise(
+        lat = config_params['blinds_lat'],
+        long = config_params['blinds_long']
+    )
+    
     # Each row in blinds list
     print('For each row in blind list')
     row_boolean = False
@@ -170,12 +177,7 @@ def blinds_event(event, context):
                 blind_up = datetime.strptime(row['time_holiday'].split('-')[0], '%H:%M')
                 blind_down = datetime.strptime(row['time_holiday'].split('-')[1], '%H:%M')
 
-            # Get sunrise from sunrisesunset.io
-            print('Get sunrise from sunrisesunset.io')
-            sunrise_data = get_sunrise(
-                lat = config_params['blinds_lat'],
-                long = config_params['blinds_long']
-            )
+            # Correct if sunrise data
             if sunrise_data['status'] == 200:
                 # Only if we can get correct data
                 # we will correct up and down times
