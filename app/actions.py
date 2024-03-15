@@ -99,12 +99,12 @@ def blinds_action(event, context):
                 "blind": event['blind'],
                 "action": event['action']
             }
-            ifttt_app(
-                key = config_params['ifttt_key'],
-                app_name = config_params['blinds_off_app'],
-                body = body
-            )
-            time.sleep(1)
+            # ifttt_app(
+            #     key = config_params['ifttt_key'],
+            #     app_name = config_params['blinds_off_app'],
+            #     body = body
+            # )
+            # time.sleep(1)
             ifttt_app(
                 key = config_params['ifttt_key'],
                 app_name = config_params['blinds_app'],
