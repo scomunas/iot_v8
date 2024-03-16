@@ -193,6 +193,19 @@ def alarms_action(event, context):
                     event_parameters = event_parameters, 
                     ttl_days = ttl_days
                 )
+            if (config_params['notify_enabled'] == True):
+                body = {
+                    "message": '<i>-- IoT v8 Action --</i>' + \
+                  '\n<b>Type</b>: alarm!!!!!!!' + \
+                  ' | <b>Id</b>: ' + event['rule']['id'] + \
+                  ' | <b>Status</b>: fired!!!' + \
+                  ' | <b>Data</b>: ' + json.dumps(event['rule'])
+                }
+                ifttt_app(
+                    key = config_params['ifttt_key'],
+                    app_name = config_params['telegram_app'],
+                    body = body
+                )
             if (event['rule']['fire_telegram'] == 'TRUE'):
                 body = {
                     "message": '<i>-- IoT v8 Action --</i>' + \
@@ -204,6 +217,14 @@ def alarms_action(event, context):
                 ifttt_app(
                     key = config_params['ifttt_key'],
                     app_name = config_params['telegram_app'],
+                    body = body
+                )
+            if (event['rule']['fire_alarm'] == 'TRUE'):
+                body = {
+                }
+                ifttt_app(
+                    key = config_params['ifttt_key'],
+                    app_name = config_params['alarm_sound_app'],
                     body = body
                 )
         else:

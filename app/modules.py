@@ -189,7 +189,7 @@ def event_create(name, event, target_lambda, schedule, event_group):
         Target=eventbridge_target,
         FlexibleTimeWindow=flex_window)
 
-# Check schdedule for concrete events
+# Check schedule for concrete events
 def event_check(group, rule):
     scheduler = boto3.client('scheduler')
 
@@ -207,4 +207,32 @@ def event_check(group, rule):
 
     return rule_found
 
+# Delete events for a group and name_prefix
+def event_delete(group, name_prefix):
+    scheduler = boto3.client('scheduler')
 
+    response = scheduler.list_schedules(
+        GroupName=group,
+        NamePrefix=name_prefix,
+        MaxResults=50
+    )
+
+    if (response['ResponseMetadata']['HTTPStatusCode'] == 200 and
+        len(response['Schedules']) > 0):
+        rule_found = True
+    else:
+        rule_found = False
+
+    rule_deleted = True
+    for schedule in response['Schedules']:
+        scheduler.delete_schedule(
+            GroupName=group,
+            Name=schedule['Name']
+        )
+
+        if (response['ResponseMetadata']['HTTPStatusCode'] == 200):
+            rule_deleted = rule_deleted & True
+        else:
+            rule_deleted = False
+
+    return rule_found & rule_deleted

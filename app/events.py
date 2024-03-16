@@ -4,7 +4,8 @@
 ######################################
 
 from modules import get_config_file, event_create, insert_db, \
-                    ifttt_app, get_sunrise, get_holidays, event_check
+                    ifttt_app, get_sunrise, get_holidays, event_check, \
+                    event_delete
 import json
 import os
 from datetime import datetime, timedelta
@@ -283,13 +284,13 @@ def alarm_event(event, context):
         "event_data": body['data']
         }
     else:
-        print('La petición no contiene los parámetros necesarios')
+        print('The request have not all the fields required')
         return {
             "statusCode": 400,
             "headers": {
                 "Content-Type": "application/json"
             },
-            "body": "La petición no contiene los parámetros necesarios"
+            "body": "The request have not all the fields required"
         }
 
     print("Create alarm events -------------------------------------------")
@@ -354,4 +355,154 @@ def alarm_event(event, context):
             "Content-Type": "application/json"
         },
         "body": "Sensor event processed"
+    }
+
+def delete_actions(event, context):
+    ## Get Event parameters
+    print("Sensor Event received-------------------------------------------")
+    # print(event)
+    body = json.loads(event["body"])
+    # print(body)
+
+    ## Check if event have the fields
+    ## required
+    if ('name_prefix' in body.keys()):
+        response = event_delete(
+            group = os.environ['EVENTBRIDGE_ACTIONS_GROUP'],
+            name_prefix = body['name_prefix']
+        )
+
+        if (response == False):
+            return {
+                "statusCode": 400,
+                "headers": {
+                    "Content-Type": "application/json"
+                },
+                "body": "Error deleting events"
+            }
+
+    else:
+        print('The request have not all the fields required')
+        return {
+            "statusCode": 400,
+            "headers": {
+                "Content-Type": "application/json"
+            },
+            "body": "The request have not all the fields required"
+        }
+
+    # Get config data and calculate today variables
+    print('Get config data and calculate today variables')
+    config = get_config_file()
+    config_params = config['config']
+
+    if (config_params['log_enabled'] == True):
+        event = {
+            "event_type": 'events',
+            "event_id": 'all',
+            "event_state": 'actions_deleted',
+            "event_data": 'Name prefix: ' + body['name_prefix']
+        }
+        ttl_days = int(os.environ['RETENTION_DAYS'])
+        events_table = os.environ['AWS_DYNAMO_EVENTS_TABLE']
+        status_code, response = insert_db(
+            table_name = events_table, 
+            event_parameters = event, 
+            ttl_days = ttl_days
+        )
+    if (config_params['notify_enabled'] == True):
+            body = {
+                "message": '<i>-- IoT v8 Event --</i>' + \
+                '\n<b>Type</b>: events' + \
+                ' | <b>Id</b>: all' + \
+                ' | <b>Status</b>: actions_deleted' + \
+                ' | <b>Data</b>: Name prefix: ' + body['name_prefix']
+            }
+            ifttt_app(
+                key = config_params['ifttt_key'],
+                app_name = config_params['telegram_app'],
+                body = body
+            )
+    
+    return {
+        "statusCode": 200,
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "body": "Events deleted"
+    }
+
+def delete_alarms(event, context):
+    ## Get Event parameters
+    print("Sensor Event received-------------------------------------------")
+    # print(event)
+    body = json.loads(event["body"])
+    # print(body)
+
+    ## Check if event have the fields
+    ## required
+    if ('name_prefix' in body.keys()):
+        response = event_delete(
+            group = os.environ['EVENTBRIDGE_ALARMS_GROUP'],
+            name_prefix = body['name_prefix']
+        )
+
+        if (response == False):
+            return {
+                "statusCode": 400,
+                "headers": {
+                    "Content-Type": "application/json"
+                },
+                "body": "Error deleting alarms"
+            }
+
+    else:
+        print('The request have not all the fields required')
+        return {
+            "statusCode": 400,
+            "headers": {
+                "Content-Type": "application/json"
+            },
+            "body": "The request have not all the fields required"
+        }
+
+    # Get config data and calculate today variables
+    print('Get config data and calculate today variables')
+    config = get_config_file()
+    config_params = config['config']
+
+    if (config_params['log_enabled'] == True):
+        event = {
+            "event_type": 'events',
+            "event_id": 'all',
+            "event_state": 'alarms_deleted',
+            "event_data": 'Name prefix: ' + body['name_prefix']
+        }
+        ttl_days = int(os.environ['RETENTION_DAYS'])
+        events_table = os.environ['AWS_DYNAMO_EVENTS_TABLE']
+        status_code, response = insert_db(
+            table_name = events_table, 
+            event_parameters = event, 
+            ttl_days = ttl_days
+        )
+    if (config_params['notify_enabled'] == True):
+            body = {
+                "message": '<i>-- IoT v8 Event --</i>' + \
+                '\n<b>Type</b>: events' + \
+                ' | <b>Id</b>: all' + \
+                ' | <b>Status</b>: alarms_deleted' + \
+                ' | <b>Data</b>: Name prefix: ' + body['name_prefix']
+            }
+            ifttt_app(
+                key = config_params['ifttt_key'],
+                app_name = config_params['telegram_app'],
+                body = body
+            )
+    
+    return {
+        "statusCode": 200,
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "body": "Alarms deleted"
     }

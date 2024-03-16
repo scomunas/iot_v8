@@ -71,6 +71,22 @@ variable "lambdas" {
                   "apiRoute": "POST /v8/alarmsAction",
                   "action_lambda_arn": "",
                   "alarms_lambda_arn": ""
+                  },
+               "deleteActions" = {
+                  "name": "iot-v8-delete-Actions",
+                  "handler": "events.delete_actions",
+                  "apiMethod": "POST",
+                  "apiRoute": "POST /v8/deleteActions",
+                  "action_lambda_arn": "",
+                  "alarms_lambda_arn": ""
+                  },
+               "deleteAlarms" = {
+                  "name": "iot-v8-delete-alarms",
+                  "handler": "events.delete_alarms",
+                  "apiMethod": "POST",
+                  "apiRoute": "POST /v8/deleteAlarms",
+                  "action_lambda_arn": "",
+                  "alarms_lambda_arn": ""
                   }
    }
 }
