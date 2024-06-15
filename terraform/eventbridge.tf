@@ -37,20 +37,21 @@ resource "aws_scheduler_schedule" "iot_v8_irrigation_schedule" {
   }
 }
 
+#### Removed because of light events added
 # Event for generate blinds actions
-resource "aws_scheduler_schedule" "iot_v8_blinds_schedule" {
-  name       = "iot-v8-blinds-schedule"
-  group_name = "iot-v8-events"
+# resource "aws_scheduler_schedule" "iot_v8_blinds_schedule" {
+#   name       = "iot-v8-blinds-schedule"
+#   group_name = "iot-v8-events"
 
-  flexible_time_window {
-    mode = "OFF"
-  }
+#   flexible_time_window {
+#     mode = "OFF"
+#   }
 
-  schedule_expression = var.blinds_cron
-  schedule_expression_timezone = "CET"
+#   schedule_expression = var.blinds_cron
+#   schedule_expression_timezone = "CET"
 
-  target {
-    arn      = var.blinds_lambda_arn
-    role_arn = aws_iam_role.iot_v8_eventbridge_role.arn
-  }
-}
+#   target {
+#     arn      = var.blinds_lambda_arn
+#     role_arn = aws_iam_role.iot_v8_eventbridge_role.arn
+#   }
+# }

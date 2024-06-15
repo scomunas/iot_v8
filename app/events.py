@@ -134,8 +134,8 @@ def blinds_event(event, context):
     ## Get Event parameters
     print("Blinds Event -------------------------------------------")
     print(event)
-    # body = json.loads(event["body"])
-    # print(body)
+    body = json.loads(event["body"])
+    print(body)
 
     print("Create blind events -------------------------------------------")
     # Get config data and calculate today variables
@@ -154,12 +154,25 @@ def blinds_event(event, context):
     for holiday in holidays:
         holiday_list.append(holiday['date'])
 
+    ##### Deleted because we start having sunrise/sunset event
     # Get sunrise from sunrisesunset.io
-    print('Get sunrise from sunrisesunset.io')
-    sunrise_data = get_sunrise(
-        lat = config_params['blinds_lat'],
-        long = config_params['blinds_long']
-    )
+    # print('Get sunrise from sunrisesunset.io')
+    # sunrise_data = get_sunrise(
+    #     lat = config_params['blinds_lat'],
+    #     long = config_params['blinds_long']
+    # )
+    # Get sunrise/sunset time
+    sunrise_data = {}
+    sunrise_data['status'] = 400
+    event_datetime = today_datetime + timedelta(minutes=2)
+    event_hour = str(event_datetime.hour) + ":" + str(event_datetime.minute)
+    if (body['type'] == 'sunrise'):
+        sunrise_data['sunrise'] = datetime.strptime(event_hour, '%H:%M')
+        sunrise_data['status'] = 200
+    if (body['type'] == 'sunset'):
+        sunrise_data['sunset'] = datetime.strptime(event_hour, '%H:%M')
+        sunrise_data['status'] = 200
+
     
     # Each row in blinds list
     print('For each row in blind list')
@@ -182,47 +195,51 @@ def blinds_event(event, context):
             if sunrise_data['status'] == 200:
                 # Only if we can get correct data
                 # we will correct up and down times
-                if blind_up < sunrise_data['results']['sunrise']:
-                    blind_up = sunrise_data['results']['sunrise']
-                if blind_down < sunrise_data['results']['sunset']:
-                    blind_down = sunrise_data['results']['sunset']
+                if ('sunrise' in sunrise_data.keys()):
+                    if blind_up < sunrise_data['sunrise']:
+                        blind_up = sunrise_data['sunrise']
+                if ('sunset' in sunrise_data.keys()):
+                    if blind_down < sunrise_data['sunset']:
+                        blind_down = sunrise_data['sunset']
             
             # Create event for blind up
-            print('Create event for blind ' + row['blind'] + ' up')
-            blind_up_date = today_date + 'T' + blind_up.strftime("%H:%M") + ':00'
-            blind_up_name = row['blind'] + "_" + blind_up_date.replace('-', '').replace(':', '').replace('T', '_')
-            event = {
-                "blind": row['blind'],
-                "action": "up"
-            }
-            event_create(
-                name = 'blind_up_' + blind_up_name,
-                event = event,
-                target_lambda = os.environ['EVENTBRIDGE_ACTIONS_LAMBDA'],
-                schedule = blind_up_date,
-                event_group = os.environ['EVENTBRIDGE_ACTIONS_GROUP']
-            )
+            if (body['type'] == 'sunrise'):
+                print('Create event for blind ' + row['blind'] + ' up')
+                blind_up_date = today_date + 'T' + blind_up.strftime("%H:%M") + ':00'
+                blind_up_name = row['blind'] + "_" + blind_up_date.replace('-', '').replace(':', '').replace('T', '_')
+                event = {
+                    "blind": row['blind'],
+                    "action": "up"
+                }
+                event_create(
+                    name = 'blind_up_' + blind_up_name,
+                    event = event,
+                    target_lambda = os.environ['EVENTBRIDGE_ACTIONS_LAMBDA'],
+                    schedule = blind_up_date,
+                    event_group = os.environ['EVENTBRIDGE_ACTIONS_GROUP']
+                )
 
             # Create event for blind down
-            print('Create event for blind ' + row['blind'] + ' down')
-            blind_down_date = today_date + 'T' + blind_down.strftime("%H:%M") + ':00'
-            blind_down_name = row['blind'] + "_" + blind_down_date.replace('-', '').replace(':', '').replace('T', '_')
-            event = {
-                "blind": row['blind'],
-                "action": "down"
-            }
-            event_create(
-                name = 'blind_down_' + blind_down_name,
-                event = event,
-                target_lambda = os.environ['EVENTBRIDGE_ACTIONS_LAMBDA'],
-                schedule = blind_down_date,
-                event_group = os.environ['EVENTBRIDGE_ACTIONS_GROUP']
-            )
+            if (body['type'] == 'sunset'):
+                print('Create event for blind ' + row['blind'] + ' down')
+                blind_down_date = today_date + 'T' + blind_down.strftime("%H:%M") + ':00'
+                blind_down_name = row['blind'] + "_" + blind_down_date.replace('-', '').replace(':', '').replace('T', '_')
+                event = {
+                    "blind": row['blind'],
+                    "action": "down"
+                }
+                event_create(
+                    name = 'blind_down_' + blind_down_name,
+                    event = event,
+                    target_lambda = os.environ['EVENTBRIDGE_ACTIONS_LAMBDA'],
+                    schedule = blind_down_date,
+                    event_group = os.environ['EVENTBRIDGE_ACTIONS_GROUP']
+                )
 
             row_boolean = True      
     
     if (row_boolean == True):
-        # Insert log and notify only if there is almost 1 irrigation event
+        # Insert log and notify only if there is almost 1 blinds event
         # created
         if (config_params['log_enabled'] == True):
             event = {
