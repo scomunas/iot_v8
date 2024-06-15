@@ -19,8 +19,8 @@
 # Local .terraform directories
 # terraform/.terraform/*
 # terraform/.terraform*
-terraform/.terraform/providers/*
-terraform/.terraform/modules/*
+terraform/.terraform/
+terraform/files/
 
 # .tfstate files
 # *.tfstate

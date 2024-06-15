@@ -1,1 +1,0 @@
-{"Modules":[{"Key":"","Source":"","Dir":"."},{"Key":"eventbridge","Source":"registry.terraform.io/terraform-aws-modules/eventbridge/aws","Version":"3.2.2","Dir":".terraform/modules/eventbridge"}]}
