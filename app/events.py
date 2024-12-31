@@ -332,7 +332,8 @@ def alarm_event(event, context):
             print("Event fired: " + str(event_generated))
             if (event_generated == False):
                 event = {
-                    "rule": trigger
+                    "rule": trigger,
+                    "event": body
                 }
                 CET = pytz.timezone("Europe/Madrid")
                 alarm_date = datetime.now().astimezone(CET) + \

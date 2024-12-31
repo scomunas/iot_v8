@@ -147,7 +147,7 @@ def blinds_action(event, context):
 
 def alarms_action(event, context):
     ## Get Event parameters
-    print("Irrigation Action -------------------------------------------")
+    print("Alarm Action -------------------------------------------")
     print(event)
     # body = json.loads(event["body"])
     # print(body)
@@ -199,7 +199,8 @@ def alarms_action(event, context):
                   '\n<b>Type</b>: alarm!!!!!!!' + \
                   ' | <b>Id</b>: ' + event['rule']['id'] + \
                   ' | <b>Status</b>: fired!!!' + \
-                  ' | <b>Data</b>: ' + json.dumps(event['rule'])
+                  ' | <b>Data</b>: ' + json.dumps(event['rule']) + \
+                  '\nAlarma generada por ' + json.dumps(event['body'])
                 }
                 ifttt_app(
                     key = config_params['ifttt_key'],
@@ -208,11 +209,9 @@ def alarms_action(event, context):
                 )
             if (event['rule']['fire_telegram'] == 'TRUE'):
                 body = {
-                    "message": '<i>-- IoT v8 Action --</i>' + \
-                  '\n<b>Type</b>: alarm!!!!!!!' + \
-                  ' | <b>Id</b>: ' + event['rule']['id'] + \
-                  ' | <b>Status</b>: fired!!!' + \
-                  ' | <b>Data</b>: ' + json.dumps(event['rule'])
+                    "message": 'Alarma generada por el sensor ' + \
+                    json.dumps(event['event']['id']) + \
+                    ' de tipo ' + json.dumps(event['event']['type'])
                 }
                 ifttt_app(
                     key = config_params['ifttt_key'],
