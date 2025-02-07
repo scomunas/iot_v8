@@ -48,7 +48,8 @@ def check_db(table_name, type, date, id, state):
         ExpressionAttributeValues={
             ':event_type': {'S': type},
             ':event_date': {'S': date}
-        }
+        },
+        ScanIndexForward=False
     )
     
     event_number = 0
@@ -60,7 +61,7 @@ def check_db(table_name, type, date, id, state):
             (event_state == state or state == 'any')):
             event_number += 1
 
-    return event_number
+    return event_number, response['Items']
 
 # Get sunrise/sunset from https://sunrisesunset.io/api/
 def get_sunrise(lat, long):

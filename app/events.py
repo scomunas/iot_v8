@@ -5,7 +5,7 @@
 
 from modules import get_config_file, event_create, insert_db, \
                     ifttt_app, get_sunrise, get_holidays, event_check, \
-                    event_delete
+                    event_delete, check_db
 import json
 import os
 from datetime import datetime, timedelta
@@ -524,3 +524,40 @@ def delete_alarms(event, context):
         },
         "body": "Alarms deleted"
     }
+
+def get_events(event, context):
+    ## Get Event parameters
+    print("Get Events -------------------------------------------")
+    # print(event)
+    body = json.loads(event["body"])
+    # print(body)
+    
+    if ('event_type' in body.keys()):
+        print('Evento correcto, tipo de evento detectado')
+        event_type = body['event_type']
+        if ((event_type == 'blinds') 
+            or (event_type == 'alarm') 
+            or (event_type == 'events')
+            or (event_type == 'irrigation')):
+            # Check events
+            event_number, events = check_db(
+                table_name = os.environ['AWS_DYNAMO_EVENTS_TABLE'], 
+                type = event_type, 
+                date = '20250101', 
+                id = '', 
+                state = ''
+            )
+            # print(events)
+            return {
+                "statusCode": 200,
+                "headers": {
+                    "Content-Type": "application/json"
+                },
+                "body": json.dumps(events)
+            }
+        else:
+            status = 400
+            response_description = 'Evento no compatible'
+    else:
+        status = 400
+        response_description = 'Tipo de evento no indicado'

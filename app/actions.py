@@ -156,7 +156,7 @@ def alarms_action(event, context):
         print('Evento correcto, alarma detectada')
         # Check if there is events that fits condition
         date_check = datetime.now() - timedelta(minutes=int(event['rule']['minutes']))
-        event_number = check_db(
+        event_number, events = check_db(
             table_name = os.environ['AWS_DYNAMO_EVENTS_TABLE'], 
             type = event['rule']['type'], 
             date = date_check.strftime('%Y%m%d_%H%M%S'), 
