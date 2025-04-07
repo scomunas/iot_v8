@@ -95,7 +95,15 @@ variable "lambdas" {
                   "apiRoute": "POST /v8/getEvents",
                   "action_lambda_arn": "",
                   "alarms_lambda_arn": ""
-                  }
+                  },
+               "rainEvent" = {
+                  "name": "iot-v8-rain-event",
+                  "handler": "events.rain_event",
+                  "apiMethod": "POST",
+                  "apiRoute": "POST /v8/rainEvent",
+                  "action_lambda_arn": "arn:aws:lambda:eu-central-1:428652792036:function:iot-v8-blinds-action",
+                  "alarms_lambda_arn": ""
+                  },
    }
 }
 

@@ -205,34 +205,34 @@ def blinds_event(event, context):
             # Create event for blind up
             if (body['type'] == 'sunrise'):
                 print('Create event for blind ' + row['blind'] + ' up')
-                blind_up_date = today_date + 'T' + blind_up.strftime("%H:%M") + ':00'
-                blind_up_name = row['blind'] + "_" + blind_up_date.replace('-', '').replace(':', '').replace('T', '_')
+                blind_date = today_date + 'T' + blind_up.strftime("%H:%M") + ':00'
+                blind_name = row['blind'] + "_" + blind_date.replace('-', '').replace(':', '').replace('T', '_')
                 event = {
                     "blind": row['blind'],
                     "action": "up"
                 }
                 event_create(
-                    name = 'blind_up_' + blind_up_name,
+                    name = 'blind_up_' + blind_name,
                     event = event,
                     target_lambda = os.environ['EVENTBRIDGE_ACTIONS_LAMBDA'],
-                    schedule = blind_up_date,
+                    schedule = blind_date,
                     event_group = os.environ['EVENTBRIDGE_ACTIONS_GROUP']
                 )
 
             # Create event for blind down
             if (body['type'] == 'sunset'):
                 print('Create event for blind ' + row['blind'] + ' down')
-                blind_down_date = today_date + 'T' + blind_down.strftime("%H:%M") + ':00'
-                blind_down_name = row['blind'] + "_" + blind_down_date.replace('-', '').replace(':', '').replace('T', '_')
+                blind_date = today_date + 'T' + blind_down.strftime("%H:%M") + ':00'
+                blind_name = row['blind'] + "_" + blind_date.replace('-', '').replace(':', '').replace('T', '_')
                 event = {
                     "blind": row['blind'],
                     "action": "down"
                 }
                 event_create(
-                    name = 'blind_down_' + blind_down_name,
+                    name = 'blind_down_' + blind_name,
                     event = event,
                     target_lambda = os.environ['EVENTBRIDGE_ACTIONS_LAMBDA'],
-                    schedule = blind_down_date,
+                    schedule = blind_date,
                     event_group = os.environ['EVENTBRIDGE_ACTIONS_GROUP']
                 )
 
@@ -245,8 +245,8 @@ def blinds_event(event, context):
             event = {
                 "event_type": 'blinds',
                 "event_id": 'all',
-                "event_state": 'event_creation',
-                "event_data": '-'
+                "event_state": body['type'],
+                "event_data": blind_date
             }
             ttl_days = int(os.environ['RETENTION_DAYS'])
             events_table = os.environ['AWS_DYNAMO_EVENTS_TABLE']
@@ -373,6 +373,170 @@ def alarm_event(event, context):
             "Content-Type": "application/json"
         },
         "body": "Sensor event processed"
+    }
+
+def rain_event(event, context):
+    ## Get Event parameters
+    print("Sensor Event received-------------------------------------------")
+    print(event)
+    body = json.loads(event["body"])
+    # print(body)
+
+    ## Create row for insert
+    if ('device_name' in body.keys() and
+        'device_action' in body.keys() and
+        'event' in body.keys()):
+        event_parameters = {
+        "event_type": body['device_action'],
+        "event_id": body['device_name'],
+        "event_state": body['event'],
+        "event_data": "-"
+        }
+    else:
+        print('The request have not all the fields required')
+        return {
+            "statusCode": 400,
+            "headers": {
+                "Content-Type": "application/json"
+            },
+            "body": "The request have not all the fields required"
+        }
+
+    print("Create rain events -------------------------------------------")
+    # Get config data and calculate today variables
+    print('Get config data and calculate today variables')
+    config = get_config_file()
+    blinds = config['blinds']
+    holidays = config['holidays']
+    config_params = config['config']
+
+    # Calculate dates and holiday
+    CET = pytz.timezone("Europe/Madrid")
+    today_datetime = datetime.now().astimezone(CET)
+    today_weekday = days_of_week[today_datetime.weekday()]
+    today_date = today_datetime.strftime("%Y-%m-%d")
+    holiday_list = get_holidays("ES", "ES-CT")['results']
+    for holiday in holidays:
+        holiday_list.append(holiday['date'])
+
+    # Get sunrise/sunset time
+    sunrise_data = {}
+    sunrise_data['status'] = 400
+    event_datetime = today_datetime + timedelta(minutes=2)
+    event_hour = str(event_datetime.hour) + ":" + str(event_datetime.minute)
+    sunrise_data['sunrise'] = datetime.strptime(event_hour, '%H:%M')
+    sunrise_data['sunset'] = datetime.strptime(event_hour, '%H:%M')
+    sunrise_data['status'] = 200
+
+    # Check events
+    event_number, events = check_db(
+        table_name = os.environ['AWS_DYNAMO_EVENTS_TABLE'], 
+        type = 'blinds', 
+        date = today_date, 
+        id = 'any', 
+        state = 'any'
+    )
+    sunrise_date = pytz.timezone('CET').localize(datetime.strptime('2000-01-01T00:00:00', '%Y-%m-%dT%H:%M:%S'))
+    sunset_date = pytz.timezone('CET').localize(datetime.strptime('2100-01-01T00:00:00', '%Y-%m-%dT%H:%M:%S'))
+    if (event_number > 0):
+        # If sunrise event has been registered
+        for event in events:
+            if (event['event_state']['S'] == 'sunrise'):
+                event_date = datetime.strptime(event['event_data']['S'], '%Y-%m-%dT%H:%M:%S')
+                sunrise_date = pytz.timezone('CET').localize(event_date)
+            if (event['event_state']['S'] == 'sunset'):
+                event_date = datetime.strptime(event['event_data']['S'], '%Y-%m-%dT%H:%M:%S')
+                sunset_date = pytz.timezone('CET').localize(event_date)
+    # print(today_datetime)
+    # print(sunrise_date)
+    # print(sunset_date)
+
+    # Check daytime schedule, if it's night do nothing
+    if ((today_datetime > sunrise_date) and
+        (today_datetime < sunset_date)):
+        print("Daytime, checking if we have to up or down blinds")
+        if (body['event'] == 'rain_stop'):
+            # Rain stops, please up the blinds
+            # Each row in blinds list
+            print('Rain Stop... For each row in blind list')
+            for row in blinds:
+                if row['rain'] == True:
+                    # Only if rain is enabled
+                    print('Create event for blind ' + row['blind'] + ' up')
+                    blind_date = datetime.strftime(today_datetime + timedelta(minutes=1), '%Y-%m-%dT%H:%M:%S')
+                    blind_name = row['blind'] + "_" + blind_date.replace('-', '').replace(':', '').replace('T', '_')
+                    event = {
+                        "blind": row['blind'],
+                        "action": "up"
+                    }
+                    event_create(
+                        name = 'blind_up_' + blind_name,
+                        event = event,
+                        target_lambda = os.environ['EVENTBRIDGE_ACTIONS_LAMBDA'],
+                        schedule = blind_date,
+                        event_group = os.environ['EVENTBRIDGE_ACTIONS_GROUP']
+                    )
+
+        if (body['event'] == 'rain_start'):
+            # Rain start, please down the blinds
+            # Each row in blinds list
+            print('Rain Start... For each row in blind list')
+            for row in blinds:
+                if row['rain'] == True:
+                    # Only if rain is enabled
+                    print('Create event for blind ' + row['blind'] + ' down')
+                    blind_date = datetime.strftime(today_datetime + timedelta(minutes=1), '%Y-%m-%dT%H:%M:%S')
+                    blind_name = row['blind'] + "_" + blind_date.replace('-', '').replace(':', '').replace('T', '_')
+                    event = {
+                        "blind": row['blind'],
+                        "action": "down"
+                    }
+                    event_create(
+                        name = 'blind_down_' + blind_name,
+                        event = event,
+                        target_lambda = os.environ['EVENTBRIDGE_ACTIONS_LAMBDA'],
+                        schedule = blind_date,
+                        event_group = os.environ['EVENTBRIDGE_ACTIONS_GROUP']
+                    )
+
+    # Insert log and notify only if there is almost 1 blinds event
+    # created
+    if (config_params['log_enabled'] == True):
+        event = {
+            "event_type": 'blinds',
+            "event_id": 'all',
+            "event_state": body['event'],
+            "event_data": '-'
+        }
+        ttl_days = int(os.environ['RETENTION_DAYS'])
+        events_table = os.environ['AWS_DYNAMO_EVENTS_TABLE']
+        status_code, response = insert_db(
+            table_name = events_table, 
+            event_parameters = event, 
+            ttl_days = ttl_days
+        )
+    if (config_params['notify_enabled'] == True):
+            body = {
+                "message": '<i>-- IoT v8 Event --</i>' + \
+                '\n<b>Type</b>: blinds' + \
+                ' | <b>Id</b>: all' + \
+                ' | <b>Status</b>: ' + body['event'] + \
+                ' | <b>Data</b>: -'
+            }
+            ifttt_app(
+                key = config_params['ifttt_key'],
+                app_name = config_params['telegram_app'],
+                body = body
+            )
+    status = 200
+    response_description = 'Registros de persianas insertados por lluvia'
+    
+    return {
+        "statusCode": status,
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "body": response_description
     }
 
 def delete_actions(event, context):
