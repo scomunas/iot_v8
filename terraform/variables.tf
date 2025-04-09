@@ -111,7 +111,7 @@ variable "retention"{
    # Retention in days
    # valid for log and DynamoDB
    type = number
-   default = 5
+   default = 14
 }
 
 variable "lambda_timeout"{

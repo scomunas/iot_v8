@@ -246,7 +246,7 @@ def blinds_event(event, context):
                 "event_type": 'blinds',
                 "event_id": 'all',
                 "event_state": body['type'],
-                "event_data": blind_date
+                "event_data": '-'
             }
             ttl_days = int(os.environ['RETENTION_DAYS'])
             events_table = os.environ['AWS_DYNAMO_EVENTS_TABLE']
@@ -376,6 +376,8 @@ def alarm_event(event, context):
     }
 
 def rain_event(event, context):
+    #### ONLY Log events, sensor is not working properly
+
     ## Get Event parameters
     print("Sensor Event received-------------------------------------------")
     print(event)
@@ -410,94 +412,116 @@ def rain_event(event, context):
     holidays = config['holidays']
     config_params = config['config']
 
-    # Calculate dates and holiday
-    CET = pytz.timezone("Europe/Madrid")
-    today_datetime = datetime.now().astimezone(CET)
-    today_weekday = days_of_week[today_datetime.weekday()]
-    today_date = today_datetime.strftime("%Y-%m-%d")
-    holiday_list = get_holidays("ES", "ES-CT")['results']
-    for holiday in holidays:
-        holiday_list.append(holiday['date'])
+    # # Calculate dates and holiday
+    # CET = pytz.timezone("Europe/Madrid")
+    # today_datetime = datetime.now().astimezone(CET)
+    # today_weekday = days_of_week[today_datetime.weekday()]
+    # today_date = today_datetime.strftime("%Y%m%d")
+    # holiday_list = get_holidays("ES", "ES-CT")['results']
+    # for holiday in holidays:
+    #     holiday_list.append(holiday['date'])
 
-    # Get sunrise/sunset time
-    sunrise_data = {}
-    sunrise_data['status'] = 400
-    event_datetime = today_datetime + timedelta(minutes=2)
-    event_hour = str(event_datetime.hour) + ":" + str(event_datetime.minute)
-    sunrise_data['sunrise'] = datetime.strptime(event_hour, '%H:%M')
-    sunrise_data['sunset'] = datetime.strptime(event_hour, '%H:%M')
-    sunrise_data['status'] = 200
+    # # Check events for sunrise or sunset
+    # event_number, events = check_db(
+    #     table_name = os.environ['AWS_DYNAMO_EVENTS_TABLE'], 
+    #     type = 'blinds', 
+    #     date = today_date, 
+    #     id = 'any', 
+    #     state = 'any'
+    # )
+    # # print(events)
 
-    # Check events
-    event_number, events = check_db(
-        table_name = os.environ['AWS_DYNAMO_EVENTS_TABLE'], 
-        type = 'blinds', 
-        date = today_date, 
-        id = 'any', 
-        state = 'any'
-    )
-    sunrise_date = pytz.timezone('CET').localize(datetime.strptime('2000-01-01T00:00:00', '%Y-%m-%dT%H:%M:%S'))
-    sunset_date = pytz.timezone('CET').localize(datetime.strptime('2100-01-01T00:00:00', '%Y-%m-%dT%H:%M:%S'))
-    if (event_number > 0):
-        # If sunrise event has been registered
-        for event in events:
-            if (event['event_state']['S'] == 'sunrise'):
-                event_date = datetime.strptime(event['event_data']['S'], '%Y-%m-%dT%H:%M:%S')
-                sunrise_date = pytz.timezone('CET').localize(event_date)
-            if (event['event_state']['S'] == 'sunset'):
-                event_date = datetime.strptime(event['event_data']['S'], '%Y-%m-%dT%H:%M:%S')
-                sunset_date = pytz.timezone('CET').localize(event_date)
+    # # Get only last rain event
+    # rain_events = []
+    # blind_events = {}
+    # if (event_number > 0):
+    #     for event in events:
+    #         event_id = event['event_id']['S']
+    #         event_date = event['event_date']['S']
+    #         event_state = event['event_state']['S']
+    #         if (event_state == 'rain_start') or (event_state == 'rain_stop')):
+    #             rain_events.append(event_state)
+    #         if ((event_state == "up") or (event_state == "down")):
+    #             if (event_id not in blind_events.keys()):
+    #                 # No Blind event registered for this id
+    #                 blind_events[event_id] = {}
+    #                 blind_events[event_id][event_state + "_event_date"] = event_date
+    #             else:
+    #                 # Event registered for this blind
+    #                 if ((event_state + "_event_date") not in blind_events[event_id].keys()):
+    #                     # Date not registered for this state
+    #                     blind_events[event_id][event_state + "_event_date"] = event_date
+    #                 else:
+    #                     if (event_date > blind_events[event_id][event_state + "_event_date"]):
+    #                         # Event later than registered
+    #                         blind_events[event_id][event_state + "_event_date"] = event_date
+    # print(blind_events)
+
+    # # Only if stop event comes next to start
+    # ##### TODO
+
+    # sunrise_date = pytz.timezone('CET').localize(datetime.strptime('2000-01-01T00:00:00', '%Y-%m-%dT%H:%M:%S'))
+    # sunset_date = pytz.timezone('CET').localize(datetime.strptime('2100-01-01T00:00:00', '%Y-%m-%dT%H:%M:%S'))
+    # if (event_number > 0):
+    #     # If sunrise event has been registered
+    #     for event in events:
+    #         if (event['event_state']['S'] == 'sunrise'):
+    #             event_date = datetime.strptime(event['event_data']['S'], '%Y-%m-%dT%H:%M:%S')
+    #             sunrise_date = pytz.timezone('CET').localize(event_date)
+    #         if (event['event_state']['S'] == 'sunset'):
+    #             event_date = datetime.strptime(event['event_data']['S'], '%Y-%m-%dT%H:%M:%S')
+    #             sunset_date = pytz.timezone('CET').localize(event_date)
     # print(today_datetime)
     # print(sunrise_date)
     # print(sunset_date)
 
     # Check daytime schedule, if it's night do nothing
-    if ((today_datetime > sunrise_date) and
-        (today_datetime < sunset_date)):
-        print("Daytime, checking if we have to up or down blinds")
-        if (body['event'] == 'rain_stop'):
-            # Rain stops, please up the blinds
-            # Each row in blinds list
-            print('Rain Stop... For each row in blind list')
-            for row in blinds:
-                if row['rain'] == True:
-                    # Only if rain is enabled
-                    print('Create event for blind ' + row['blind'] + ' up')
-                    blind_date = datetime.strftime(today_datetime + timedelta(minutes=1), '%Y-%m-%dT%H:%M:%S')
-                    blind_name = row['blind'] + "_" + blind_date.replace('-', '').replace(':', '').replace('T', '_')
-                    event = {
-                        "blind": row['blind'],
-                        "action": "up"
-                    }
-                    event_create(
-                        name = 'blind_up_' + blind_name,
-                        event = event,
-                        target_lambda = os.environ['EVENTBRIDGE_ACTIONS_LAMBDA'],
-                        schedule = blind_date,
-                        event_group = os.environ['EVENTBRIDGE_ACTIONS_GROUP']
-                    )
+    # if ((today_datetime > sunrise_date) and
+    #     (today_datetime < sunset_date)):
+    #     print("Daytime, checking if we have to up or down blinds")
+    #     if (body['event'] == 'rain_stop'):
+    #         # Rain stops, please up the blinds
+    #         # Each row in blinds list
+    #         print('Rain Stop... For each row in blind list')
+    #         for row in blinds:
+    #             if row['rain'] == True:
+    #                 # Only if rain is enabled
+    #                 print('Create event for blind ' + row['blind'] + ' up')
+    #                 blind_date = datetime.strftime(today_datetime + timedelta(minutes=1), '%Y-%m-%dT%H:%M:%S')
+    #                 blind_name = row['blind'] + "_" + blind_date.replace('-', '').replace(':', '').replace('T', '_')
+    #                 event = {
+    #                     "blind": row['blind'],
+    #                     "action": "up"
+    #                 }
+    #                 event_create(
+    #                     name = 'blind_up_' + blind_name,
+    #                     event = event,
+    #                     target_lambda = os.environ['EVENTBRIDGE_ACTIONS_LAMBDA'],
+    #                     schedule = blind_date,
+    #                     event_group = os.environ['EVENTBRIDGE_ACTIONS_GROUP']
+    #                 )
 
-        if (body['event'] == 'rain_start'):
-            # Rain start, please down the blinds
-            # Each row in blinds list
-            print('Rain Start... For each row in blind list')
-            for row in blinds:
-                if row['rain'] == True:
-                    # Only if rain is enabled
-                    print('Create event for blind ' + row['blind'] + ' down')
-                    blind_date = datetime.strftime(today_datetime + timedelta(minutes=1), '%Y-%m-%dT%H:%M:%S')
-                    blind_name = row['blind'] + "_" + blind_date.replace('-', '').replace(':', '').replace('T', '_')
-                    event = {
-                        "blind": row['blind'],
-                        "action": "down"
-                    }
-                    event_create(
-                        name = 'blind_down_' + blind_name,
-                        event = event,
-                        target_lambda = os.environ['EVENTBRIDGE_ACTIONS_LAMBDA'],
-                        schedule = blind_date,
-                        event_group = os.environ['EVENTBRIDGE_ACTIONS_GROUP']
-                    )
+    #     if (body['event'] == 'rain_start'):
+    #         # Rain start, please down the blinds
+    #         # Each row in blinds list
+    #         print('Rain Start... For each row in blind list')
+    #         for row in blinds:
+    #             if row['rain'] == True:
+    #                 # Only if rain is enabled
+    #                 print('Create event for blind ' + row['blind'] + ' down')
+    #                 blind_date = datetime.strftime(today_datetime + timedelta(minutes=1), '%Y-%m-%dT%H:%M:%S')
+    #                 blind_name = row['blind'] + "_" + blind_date.replace('-', '').replace(':', '').replace('T', '_')
+    #                 event = {
+    #                     "blind": row['blind'],
+    #                     "action": "down"
+    #                 }
+    #                 event_create(
+    #                     name = 'blind_down_' + blind_name,
+    #                     event = event,
+    #                     target_lambda = os.environ['EVENTBRIDGE_ACTIONS_LAMBDA'],
+    #                     schedule = blind_date,
+    #                     event_group = os.environ['EVENTBRIDGE_ACTIONS_GROUP']
+    #                 )
 
     # Insert log and notify only if there is almost 1 blinds event
     # created
@@ -506,7 +530,7 @@ def rain_event(event, context):
             "event_type": 'blinds',
             "event_id": 'all',
             "event_state": body['event'],
-            "event_data": '-'
+            "event_data": body['device_name']
         }
         ttl_days = int(os.environ['RETENTION_DAYS'])
         events_table = os.environ['AWS_DYNAMO_EVENTS_TABLE']
@@ -521,7 +545,7 @@ def rain_event(event, context):
                 '\n<b>Type</b>: blinds' + \
                 ' | <b>Id</b>: all' + \
                 ' | <b>Status</b>: ' + body['event'] + \
-                ' | <b>Data</b>: -'
+                ' | <b>Data</b>: ' + body['device_name']
             }
             ifttt_app(
                 key = config_params['ifttt_key'],

@@ -24,6 +24,7 @@ def insert_db(table_name, event_parameters, ttl_days):
     date_ttl = int(date_delta.timestamp())
     event_parameters['event_date'] = date_string
     event_parameters['event_date_ttl'] = date_ttl
+    # print(date_string)
 
     # Create DynamoDB client
     dynamodb = boto3.resource('dynamodb')
@@ -51,6 +52,7 @@ def check_db(table_name, type, date, id, state):
         },
         ScanIndexForward=False
     )
+    # print(response)
     
     event_number = 0
     
