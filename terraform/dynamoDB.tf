@@ -34,3 +34,29 @@ resource "aws_dynamodb_table" "iot_v8_events" {
     #     projection_type    = "ALL"
     # }
 }
+
+resource "aws_dynamodb_table" "iot_v8_temperature" {
+    name = "iot-v8-temperature"
+    billing_mode = "PAY_PER_REQUEST"
+    stream_enabled = true
+    stream_view_type = "NEW_IMAGE"
+
+    attribute {
+        name = "event_date"
+        type = "S"
+    }
+
+    attribute {
+        name = "sensor"
+        type = "S"
+    }
+
+    ttl {
+        enabled = true
+        attribute_name = "event_date_ttl"
+    }
+
+    hash_key = "sensor"
+    range_key = "event_date"
+
+}

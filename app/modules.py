@@ -65,6 +65,26 @@ def check_db(table_name, type, date, id, state):
 
     return event_number, response['Items']
 
+# Get results from table
+def get_db(table_name):
+    dynamodb = boto3.resource('dynamodb')
+
+    # Reference the table
+    table = dynamodb.Table(table_name)
+
+    # Perform the scan
+    response = table.scan()
+    items = response.get('Items', [])
+    print(f"Retrieved {len(items)} items.")
+
+    # Handle paginated results (if table has more than 1MB of data)
+    while 'LastEvaluatedKey' in response:
+        response = table.scan(ExclusiveStartKey=response['LastEvaluatedKey'])
+        items.extend(response.get('Items', []))
+        print(f"Retrieved {len(items)} items so far...")
+
+    return items
+
 # Get sunrise/sunset from https://sunrisesunset.io/api/
 def get_sunrise(lat, long):
     url = "https://api.sunrisesunset.io/json?lat=" + \
