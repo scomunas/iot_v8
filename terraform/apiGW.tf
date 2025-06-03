@@ -4,14 +4,6 @@
 resource "aws_apigatewayv2_api" "iot_v8_api_gw_api" {
   name          = "iot-v8-api-gw"
   protocol_type = "HTTP"
-
-  cors_configuration {
-    allow_origins = ["*"] # O especifica tu dominio aquí: ["https://midominio.com"]
-    allow_methods = ["GET", "POST", "OPTIONS", "PUT", "DELETE", "PATCH"]
-    allow_headers = ["Content-Type", "Authorization", "X-Amz-Date", "X-Api-Key", "X-Amz-Security-Token"]
-    expose_headers = ["Content-Type", "Authorization"]
-    max_age = 3600
-  }
 }
 
 resource "aws_apigatewayv2_stage" "iot_v8_api_gw_stage" {

@@ -104,30 +104,6 @@ variable "lambdas" {
                   "action_lambda_arn": "arn:aws:lambda:eu-central-1:428652792036:function:iot-v8-blinds-action",
                   "alarms_lambda_arn": ""
                   },
-               "setTemperature" = {
-                  "name": "iot-v8-set-temperature",
-                  "handler": "temperature.set_temperature",
-                  "apiMethod": "POST",
-                  "apiRoute": "POST /v8/setTemperature",
-                  "action_lambda_arn": "",
-                  "alarms_lambda_arn": ""
-                  },
-               "fixTemperature" = {
-                  "name": "iot-v8-fix-temperature",
-                  "handler": "temperature.fix_temperature",
-                  "apiMethod": "POST",
-                  "apiRoute": "POST /v8/fixTemperature",
-                  "action_lambda_arn": "",
-                  "alarms_lambda_arn": ""
-                  },
-               "getTemperature" = {
-                  "name": "iot-v8-get-temperature",
-                  "handler": "temperature.get_temperature",
-                  "apiMethod": "POST",
-                  "apiRoute": "POST /v8/getTemperature",
-                  "action_lambda_arn": "",
-                  "alarms_lambda_arn": ""
-                  }
    }
 }
 
